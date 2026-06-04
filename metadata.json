@@ -1,0 +1,6 @@
+{
+  "name": "Video Content Producer Portfolio",
+  "description": "영상 콘텐츠 PD / 프로듀서 포트폴리오 웹사이트",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
