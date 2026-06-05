@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { usePortfolio } from "../context/PortfolioContext";
-import { Lock, Unlock, LogOut, CheckCircle2, RotateCcw, Plus, Trash2, Edit2, Check, X, Eye, FileText, Info, HelpCircle } from "lucide-react";
+import { Lock, Unlock, LogOut, CheckCircle2, RotateCcw, Plus, Trash2, Edit2, Check, X, Eye, FileText, Info, HelpCircle, Copy } from "lucide-react";
 import { Project, Service } from "../data";
 
 interface AdminPanelProps {
@@ -781,19 +781,39 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             {/* Bottom Status / Logout Bar */}
             <div className="p-6 bg-white border-t border-gray-200/50 flex items-center justify-between">
               {isAdmin ? (
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center justify-between w-full flex-wrap gap-2">
                   <div className="flex items-center space-x-2">
                     <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
                     <span className="text-xs font-bold text-emerald-800">연결 모드 활성화 중</span>
                   </div>
-                  <button
-                    onClick={logoutAdmin}
-                    className="p-1 px-3 text-xs font-bold bg-gray-100 hover:bg-red-50 hover:text-red-600 transition-all rounded-md flex items-center space-x-1"
-                    id="btn-admin-logout"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>콘솔 종료</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        const backupData = {
+                          profile,
+                          services,
+                          projects
+                        };
+                        navigator.clipboard.writeText(JSON.stringify(backupData, null, 2))
+                          .then(() => alert("수정한 내용들이 컴퓨터 클립보드에 잘 복사되었습니다!\n이 내용을 그대로 AI 에이전트 채팅창에 붙여넣기(Ctrl+V)하여 전송해 주세요. 모바일과 넷리파이 사이트에서도 별도 로그인 없이 즉시 적용될 수 있도록 파일 자체에 하드코딩해 드리겠습니다."))
+                          .catch(() => alert("클립보드 복사에 실패했습니다. 기기 보안 설정 때문일 수 있으므로 수정된 텍스트들을 채팅창에 직접 알려주시면 바로 반영해 드릴게요."));
+                      }}
+                      className="p-1 px-3 text-xs font-bold bg-brand-point hover:bg-brand-accent text-white transition-all rounded-md flex items-center space-x-1.5 shadow-sm"
+                      id="btn-admin-export-backup"
+                      type="button"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>수정 내용 코드 복사하기 (모바일 동기화용)</span>
+                    </button>
+                    <button
+                      onClick={logoutAdmin}
+                      className="p-1 px-3 text-xs font-bold bg-gray-100 hover:bg-red-50 hover:text-red-600 transition-all rounded-md flex items-center space-x-1"
+                      id="btn-admin-logout"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>콘솔 종료</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-[11px] text-brand-sub font-mono text-center w-full">
