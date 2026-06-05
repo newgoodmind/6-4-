@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "PortfolioData": {
+      "title": "PortfolioData",
+      "description": "All data of the portfolio, including profile, services, and projects.",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "object",
+          "description": "Developer profile text, social links, names."
+        },
+        "services": {
+          "type": "array",
+          "description": "Array of services offered."
+        },
+        "projects": {
+          "type": "array",
+          "description": "Array of projects done."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last update."
+        }
+      },
+      "required": ["profile", "services", "projects"]
+    }
+  },
+  "firestore": {
+    "/portfolio/data": {
+      "schema": "PortfolioData",
+      "description": "The central storage document for the portfolio content."
+    }
+  }
+}

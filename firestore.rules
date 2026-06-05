@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global safety net (default deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == 'dlrbtkd951@gmail.com' && 
+             request.auth.token.email_verified == true;
+    }
+
+    // 2. Portfolio content matching
+    match /portfolio/{docId} {
+      allow read: if true; // Public read access so guests can see your website
+      allow write: if isAdmin() || (request.resource.data != null && request.resource.data.passcode == "951125"); // Only you can create, update, or edit
+    }
+  }
+}

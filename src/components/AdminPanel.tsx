@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { usePortfolio } from "../context/PortfolioContext";
-import { Lock, Unlock, LogOut, CheckCircle2, RotateCcw, Plus, Trash2, Edit2, Check, X, Eye, FileText, Info, HelpCircle, Copy } from "lucide-react";
+import { Lock, Unlock, LogOut, CheckCircle2, RotateCcw, Plus, Trash2, Edit2, Check, X, Eye, FileText, Info, HelpCircle, Copy, Chrome, Cloud, Database, RefreshCw } from "lucide-react";
 import { Project, Service } from "../data";
 
 interface AdminPanelProps {
@@ -15,14 +15,17 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     services,
     projects,
     isAdmin,
+    currentUser,
     loginAdmin,
+    loginAdminWithGoogle,
     logoutAdmin,
     updateProfile,
     updateService,
     updateProject,
     addProject,
     deleteProject,
-    resetToDefault
+    resetToDefault,
+    syncToFirebase
   } = usePortfolio();
 
   const [password, setPassword] = useState("");
@@ -48,13 +51,15 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
   }, [isOpen, profile]);
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = loginAdmin(password);
     if (success) {
       setAuthError(false);
       setPassword("");
       showSaveSuccess();
+      // Proactively sync local changes to cloud on unlock
+      await syncToFirebase(profile, services, projects);
     } else {
       setAuthError(true);
       setTimeout(() => setAuthError(false), 3000);
@@ -218,19 +223,19 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             <div className="flex-grow overflow-y-auto p-6 md:p-8">
               {!isAdmin ? (
                 /* PASSWORD LOCK GATE SCREEN */
-                <div className="h-full flex flex-col items-center justify-center max-w-sm mx-auto text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-brand-point/5 text-brand-point flex items-center justify-center mb-6">
-                    <Lock className="w-8 h-8 text-brand-point" />
+                <div className="h-full flex flex-col items-center justify-center max-w-sm mx-auto text-center py-6 font-sans">
+                  <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4">
+                    <Lock className="w-7 h-7 text-brand-point animate-pulse" />
                   </div>
-                  <h3 className="text-xl font-bold text-brand-text mb-2">관리자 로그인</h3>
-                  <p className="text-xs text-brand-sub leading-normal mb-8">
-                    실시간 텍스트, 프로젝트 추가/삭제 및 서비스 정의를 편집하려면 시스템 보안 패스코드를 입력해주세요.
+                  <h3 className="text-xl font-extrabold text-brand-text mb-2">실시간 클라우드 관리 콘솔</h3>
+                  <p className="text-xs text-brand-sub leading-relaxed mb-6">
+                    관리자 비밀번호를 입력하면 이 PC에서 수정한 내용이 모바일 및 다른 기기의 홈페이지에도 즉시 똑같이 반영됩니다!
                   </p>
 
                   <form onSubmit={handleAuthSubmit} className="w-full space-y-4">
                     <div className="text-left">
                       <label htmlFor="admin-pass" className="text-xs font-bold text-brand-sub block mb-1.5">
-                        비밀번호 <span className="text-red-500">*</span>
+                        관리자 비밀번호 <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="password"
@@ -239,7 +244,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                         placeholder="••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 hover:border-gray-300 focus:border-brand-accent rounded-xl text-center text-xl font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-accent/25 transition-all"
+                        className="w-full px-4 py-3.5 bg-white border border-gray-200 hover:border-gray-300 focus:border-brand-accent rounded-xl text-center text-2xl font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-accent/25 transition-all shadow-inner"
                       />
                     </div>
 
@@ -247,7 +252,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                       <motion.div
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-xs font-bold text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100"
+                        className="text-xs font-bold text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 animate-bounce"
                       >
                         올바른 비밀번호가 아닙니다. 다시 시도해 주세요.
                       </motion.div>
@@ -255,14 +260,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
                     <button
                       type="submit"
-                      className="w-full py-3.5 bg-brand-point hover:bg-brand-accent text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center space-x-1.5"
+                      className="w-full py-3.5 bg-brand-point hover:bg-brand-accent text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer animate-pulse hover:animate-none"
                       id="btn-admin-submit-auth"
                     >
                       <Unlock className="w-4 h-4" />
-                      <span>패스코드 잠금해제</span>
+                      <span>수정 권한 활성화 & 실시간 연동</span>
                     </button>
                   </form>
-                  {/* Password hint removed for security */}
                 </div>
               ) : (
                 /* VERIFIED CONTROL CONSOLE */
@@ -781,37 +785,49 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             {/* Bottom Status / Logout Bar */}
             <div className="p-6 bg-white border-t border-gray-200/50 flex items-center justify-between">
               {isAdmin ? (
-                <div className="flex items-center justify-between w-full flex-wrap gap-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
-                    <span className="text-xs font-bold text-emerald-800">연결 모드 활성화 중</span>
+                <div className="flex items-center justify-between w-full flex-wrap gap-4 font-sans">
+                  {/* Glowing Sync Status */}
+                  <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-lg">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping shrink-0" />
+                    <div className="text-left">
+                      <p className="text-[11px] leading-none font-bold text-emerald-800 flex items-center space-x-1">
+                        <Cloud className="w-3.5 h-3.5 shrink-0 text-emerald-600 animate-pulse" />
+                        <span>실시간 클라우드 동기화 성공</span>
+                      </p>
+                      <p className="text-[9px] font-semibold text-emerald-600 mt-0.5">모든 기기(모바일 포함)에 실시간 통일 적용 중</p>
+                    </div>
                   </div>
+
                   <div className="flex items-center space-x-2">
+                    {/* Manual Force Sync Target Button */}
                     <button
-                      onClick={() => {
-                        const backupData = {
-                          profile,
-                          services,
-                          projects
-                        };
-                        navigator.clipboard.writeText(JSON.stringify(backupData, null, 2))
-                          .then(() => alert("수정한 내용들이 컴퓨터 클립보드에 잘 복사되었습니다!\n이 내용을 그대로 AI 에이전트 채팅창에 붙여넣기(Ctrl+V)하여 전송해 주세요. 모바일과 넷리파이 사이트에서도 별도 로그인 없이 즉시 적용될 수 있도록 파일 자체에 하드코딩해 드리겠습니다."))
-                          .catch(() => alert("클립보드 복사에 실패했습니다. 기기 보안 설정 때문일 수 있으므로 수정된 텍스트들을 채팅창에 직접 알려주시면 바로 반영해 드릴게요."));
-                      }}
-                      className="p-1 px-3 text-xs font-bold bg-brand-point hover:bg-brand-accent text-white transition-all rounded-md flex items-center space-x-1.5 shadow-sm"
-                      id="btn-admin-export-backup"
                       type="button"
+                      onClick={async () => {
+                        const success = await syncToFirebase(profile, services, projects);
+                        if (success) {
+                          showSaveSuccess();
+                          alert("🎉 [동기화 완료]\n현재 컴퓨터에서 수정한 모든 내용이 클라우드에 성공적으로 업로드되었습니다!\n이제 스마트폰(모바일) 및 다른 컴퓨터에서도 새로고침 시 이 내용이 즉시 똑같이 나타납니다.");
+                        } else {
+                          alert("동기화 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                        }
+                      }}
+                      className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center space-x-1.5 cursor-pointer"
+                      title="클라우드로 수동 업로드 실행"
                     >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>수정 내용 코드 복사하기 (모바일 동기화용)</span>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
+                      <span>수동 동기화 실행</span>
                     </button>
+
+                    {/* Exit Console Button */}
                     <button
-                      onClick={logoutAdmin}
-                      className="p-1 px-3 text-xs font-bold bg-gray-100 hover:bg-red-50 hover:text-red-600 transition-all rounded-md flex items-center space-x-1"
+                      onClick={async () => {
+                        await logoutAdmin();
+                      }}
+                      className="p-2.5 bg-gray-100 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg flex items-center space-x-1 text-xs font-bold text-gray-500 cursor-pointer"
                       id="btn-admin-logout"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>콘솔 종료</span>
+                      <span>로그아웃</span>
                     </button>
                   </div>
                 </div>
