@@ -818,6 +818,26 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                       <span>수동 동기화 실행</span>
                     </button>
 
+                    {/* Copy Modified Code for Mobile Backup */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const backupData = {
+                          profile,
+                          services,
+                          projects
+                        };
+                        navigator.clipboard.writeText(JSON.stringify(backupData, null, 2))
+                          .then(() => alert("🎉 [코드 복사 완료]\n수정한 내용이 컴퓨터 클립보드에 성공적으로 복사되었습니다!\n이 내용을 그대로 AI 에이전트 채팅창에 붙여넣기(Ctrl+V)하여 전송해 주세요.\n제가 소스코드 파일(/src/data.ts)에 직접 이 데이터를 하드코딩해서 반영해 드리겠습니다!\n그렇게 하면 인터넷/DB 연결 상태에 상관없이, 모든 기기(모바일/PC)의 Netlify 배포 사이트에서도 평생 즉시 완벽한 내용으로 나타납니다!"))
+                          .catch(() => alert("클립보드 복사에 실패했습니다. 복사 권한을 허용해 주시거나 에이전트 채팅창에 직접 텍스트를 알려주시면 반영해 드릴게요."));
+                      }}
+                      className="px-3.5 py-2.5 bg-brand-point hover:bg-brand-accent text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center space-x-1.5 cursor-pointer"
+                      id="btn-admin-export-backup"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>수정 내용 코드 복사하기 (모바일 동기화용)</span>
+                    </button>
+
                     {/* Exit Console Button */}
                     <button
                       onClick={async () => {

@@ -105,6 +105,14 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
+          
+          // Auto-upgrade if Firestore database contains the old stale placeholder name "이지훈"
+          if (data.profile && data.profile.name === "이지훈") {
+            console.log("Stale placeholder '이지훈' found in Firestore. Upgrading database to '이규상'...");
+            syncToFirebase(profileData, servicesData, projectsData);
+            return;
+          }
+
           if (data.profile) {
             setProfile(data.profile);
             localStorage.setItem("portfolio_profile", JSON.stringify(data.profile));
@@ -117,6 +125,10 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             setProjects(data.projects);
             localStorage.setItem("portfolio_projects", JSON.stringify(data.projects));
           }
+        } else {
+          // Auto-seed if Firestore database document is empty
+          console.log("Firestore document empty. Seeding database with '이규상' default data...");
+          syncToFirebase(profileData, servicesData, projectsData);
         }
       },
       (error) => {
